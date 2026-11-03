@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dragino Sensor Console</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Dragino Sensor Console</h1>
+      <p class="sub">
+        Configure Dragino -LB/-LS LoRaWAN sensors over Bluetooth using AT commands. Use Chrome or Edge on a desktop
+        computer.
+        <a href="https://github.com/claudobahn/dragino-sensor-web-console" target="_blank" rel="noopener">Source,
+          documentation and payload decoder on GitHub</a>.
+      </p>
+      <div id="support" class="banner" hidden></div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="terminal" aria-selected="true">Terminal</button>
+        <button role="tab" data-tab="config" aria-selected="false">PS-LB/LS settings</button>
+        <button role="tab" data-tab="discovery" aria-selected="false">Discovery</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="card conn" id="connBar">
+        <div class="row">
+          <button id="connBtn" class="primary">Connect</button>
+          <button id="disconnBtn" disabled>Disconnect</button>
+          <label>AT PIN
+            <input id="connPin" type="password" maxlength="16" class="narrow" autocomplete="off" spellcheck="false" />
+          </label>
+          <button id="loginBtn" disabled>Log in</button>
+          <span id="connStatus" class="status">Not connected</span>
+        </div>
+        <p class="hint">
+          Wake the sensor's Bluetooth first with a short button press (1–3 s) or a reset, then click <b>Connect</b>
+          within 60 s and pick the device named after its DevEUI. If you enter the PIN from the label before
+          connecting, the tool logs in automatically. The PIN is kept in memory only, never saved.
+        </p>
+      </section>
+
+      <div id="tab-terminal" class="tab-panel">
+        <section class="card">
+          <h2>Terminal</h2>
+          <div class="row" id="snippets"></div>
+          <pre id="term" class="log term" aria-live="polite"></pre>
+          <div class="row">
+            <textarea id="termInput" rows="1" class="grow mono" placeholder="AT command. Enter sends, Shift+Enter adds a line, ↑/↓ for history" spellcheck="false" disabled></textarea>
+            <button id="termSend" disabled>Send</button>
+          </div>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="termTimestamps" checked /> Timestamps</label>
+            <button id="termClear">Clear</button>
+            <button id="termSave">Save transcript</button>
+            <label class="chk"><input type="checkbox" id="termRedactIds" /> Hide DevEUI/AppEUI/DevAddr in saved file</label>
+          </div>
+          <p class="hint">
+            When you paste several lines, they are sent one at a time, each waiting for the reply to the previous one.
+            Saved transcripts never contain the PIN or LoRaWAN keys.
+          </p>
+        </section>
+      </div>
+
+      <div id="tab-config" class="tab-panel" hidden>
+        <section class="card">
+          <h2>PS-LB / PS-LS settings</h2>
+          <p class="hint">
+            <b>Read from device</b> loads the current values. Edit what you need, check the commands it will send,
+            then click <b>Write changes</b>. <b>Back up settings</b> saves everything, including keys, as a script
+            you can paste into the terminal to restore it, for example after a firmware upgrade. Each setting also shows the matching LoRaWAN downlink, so you can make
+            the same change over the air once the sensor is deployed.
+          </p>
+          <div class="row">
+            <button id="cfgRead" disabled>Read from device</button>
+            <button id="cfgWrite" class="primary" disabled>Write changes</button>
+            <button id="cfgBackup" disabled title="Save all settings, including LoRaWAN keys and the PIN, as a restore script">Back up settings…</button>
+            <button id="cfgReset" disabled title="Reboot so settings that need a restart take effect. This ends the BLE connection.">Restart (ATZ)</button>
+            <span id="cfgStatus" class="status"></span>
+          </div>
+          <div id="cfgPending" class="pending" hidden></div>
+          <div id="cfgGroups"></div>
+        </section>
+
+        <section class="card" id="i4Card">
+          <h2>Live reading &amp; water depth</h2>
+          <p class="hint">
+            Converts the probe's 4–20 mA signal into depth for the probe range set below (an I4 probe is 0–4 m).
+            <b>Read now</b> sends <code>AT+GETSENSORVALUE=0</code>, which powers the probe, samples it and prints the
+            battery voltage and probe current (about 2 s). You can also type a current from a meter.
+          </p>
+          <div class="row">
+            <label>Probe range
+              <input id="i4Range" type="number" min="1" max="255" value="4" class="narrow" /> 
+            </label>
+            <label>Current (mA)
+              <input id="i4Ma" type="number" step="0.001" class="narrow" />
+            </label>
+            <button id="i4ReadNow" disabled>Read now</button>
+            <span id="i4Depth" class="big"></span>
+          </div>
+          <div id="i4Extra" class="muted"></div>
+          <pre id="i4Raw" class="log small" hidden></pre>
+        </section>
+
+        <section class="card" id="calCard">
+          <h2>Two-point calibration wizard (AT+2PCALIDC)</h2>
+          <ol class="hint">
+            <li>Clear any existing calibration first (button below), or the readings you take will already be corrected. Firmware v1.2 has no on-device calibration; the wizard then gives you a decoder formula instead.</li>
+            <li>Point A: hold the probe at a known depth, such as in air at 0 m, and record the current.</li>
+            <li>Point B: lower it to a second known depth, ideally near the depth you care about most, and record the current.</li>
+            <li>Review the computed command, then write it. Requires firmware 1.2.8 or later.</li>
+          </ol>
+          <div class="row">
+            <button id="calClear" disabled>Clear calibration (2PCALIDC=0,0,0,0 &amp; CALIBRATION=1000,1000)</button>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-point">
+              <h3>Point A</h3>
+              <label>True depth (m) <input id="calDepthA" type="number" step="0.001" value="0" /></label>
+              <label>Measured current (mA) <input id="calMaA" type="number" step="0.001" /></label>
+              <button id="calUseA" class="small">Use live reading</button>
+            </div>
+            <div class="cal-point">
+              <h3>Point B</h3>
+              <label>True depth (m) <input id="calDepthB" type="number" step="0.001" /></label>
+              <label>Measured current (mA) <input id="calMaB" type="number" step="0.001" /></label>
+              <button id="calUseB" class="small">Use live reading</button>
+            </div>
+          </div>
+          <div id="calResult" class="cal-result"></div>
+          <div class="row">
+            <button id="calWrite" class="primary" disabled>Write calibration</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="tab-discovery" class="tab-panel" hidden>
+        <p class="hint">
+          Discovery is a low-level fallback for checking which Bluetooth services a device exposes. It makes its own
+          connection, so disconnect above first.
+        </p>
+      <section class="card">
+        <h2>1. Scan &amp; connect</h2>
+        <ol class="hint">
+          <li>Wake the sensor's BLE: press the button briefly (1–3 s) or reset it. BLE turns off after 60 s without a connection.</li>
+          <li>Click <b>Scan &amp; connect</b> within that window and pick the device. Its name should match the DevEUI on the label.</li>
+        </ol>
+        <div class="row">
+          <label>Name prefix filter (optional)
+            <input id="namePrefix" placeholder="e.g. first digits of DevEUI" />
+          </label>
+          <label class="chk"><input type="checkbox" id="readValues" checked /> Read characteristic values</label>
+          <label class="chk"><input type="checkbox" id="captureAdv" /> Capture advertisement (experimental)</label>
+        </div>
+        <details>
+          <summary>Extra service UUIDs to request (one per line)</summary>
+          <p class="hint">
+            Chrome only reveals services listed before connecting. A broad set of common serial-over-BLE services is
+            already included. If nRF Connect shows a service that's missing here, add it and scan again. Accepts
+            <code>FFE0</code>, <code>0xFFE0</code> or full 128-bit UUIDs.
+          </p>
+          <textarea id="extraUuids" rows="4" spellcheck="false"></textarea>
+          <div id="uuidErrors" class="error"></div>
+        </details>
+        <div class="row">
+          <button id="scanBtn" class="primary">Scan &amp; connect</button>
+          <button id="rescanBtn" disabled>Re-enumerate</button>
+          <button id="disconnectBtn" disabled>Disconnect</button>
+          <span id="status" class="status">Not connected</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. GATT services</h2>
+        <div id="tree" class="tree"><p class="muted">Nothing discovered yet.</p></div>
+      </section>
+
+      <section class="card">
+        <h2>3. Test console</h2>
+        <p class="hint">
+          Choose a write/notify pair, click <b>Open</b>, then send the AT PIN from the label (2–8 characters). Dragino
+          should reply <i>Correct Password</i>, then AT commands such as <code>AT+CFG</code> work.
+        </p>
+        <div class="row">
+          <label class="grow">Write → notify pair
+            <select id="pairSelect" disabled><option>Discover first</option></select>
+          </label>
+          <button id="openConsoleBtn" disabled>Open</button>
+          <button id="closeConsoleBtn" disabled>Close</button>
+        </div>
+        <div class="row">
+          <label>Chunk size
+            <input id="chunkSize" type="number" min="1" max="512" value="20" class="narrow" />
+          </label>
+          <label>Inter-chunk delay (ms)
+            <input id="chunkDelay" type="number" min="0" max="1000" value="20" class="narrow" />
+          </label>
+          <label>Line ending
+            <select id="lineEnding">
+              <option value="crlf" selected>CR+LF</option>
+              <option value="cr">CR</option>
+              <option value="lf">LF</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" id="wnr" checked /> Prefer write-without-response</label>
+          <label class="chk"><input type="checkbox" id="showHex" /> Show RX hex</label>
+        </div>
+        <div class="row">
+          <label>AT PIN
+            <input id="pin" type="password" maxlength="16" class="narrow" autocomplete="off" spellcheck="false" />
+          </label>
+          <button id="sendPinBtn" disabled>Send PIN</button>
+          <span class="quick" id="quick"></span>
+        </div>
+        <div class="row">
+          <input id="cmdInput" class="grow mono" placeholder="AT+CFG" disabled spellcheck="false" />
+          <label class="chk"><input type="checkbox" id="cmdHex" /> Hex</label>
+          <button id="sendBtn" disabled>Send</button>
+        </div>
+        <pre id="consoleLog" class="log" aria-live="polite"></pre>
+        <div class="row">
+          <button id="clearLogBtn">Clear</button>
+          <button id="saveLogBtn">Save transcript</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. Discovery report</h2>
+        <p class="hint">
+          Shows what was found plus the console transcript. Copy it or download it to share. Secrets are always
+          removed from the report and from saved transcripts: the AT PIN, the LoRaWAN AppKey, NwkSKey and AppSKey, and
+          any other 16-byte key. The console above still shows the real values.
+        </p>
+        <div class="row">
+          <label class="chk"><input type="checkbox" id="redactIds" /> Also hide DevEUI / AppEUI / DevAddr (identifiers,
+            not secrets; the DevEUI is broadcast as the BLE name)</label>
+        </div>
+        <div class="row">
+          <button id="copyReportBtn" disabled>Copy JSON</button>
+          <button id="downloadReportBtn" disabled>Download JSON</button>
+        </div>
+        <pre id="report" class="log small"></pre>
+      </section>
+        <section class="card">
+          <p class="muted">Discovery event log</p>
+          <pre id="eventLog" class="log small"></pre>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "dragino-sensor-web-console",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Web Bluetooth configuration console for Dragino -LB/-LS LoRaWAN sensors",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "e2e": "vite build && node e2e/run.mjs"
+  },
+  "devDependencies": {
+    "@types/web-bluetooth": "^0.0.22",
+    "acorn": "^8.19.0",
+    "playwright": "1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  }
+}
