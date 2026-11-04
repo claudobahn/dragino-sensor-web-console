@@ -4,7 +4,7 @@ A browser tool for configuring Dragino LoRaWAN sensors over Bluetooth, using Web
 commands. It targets the -LB/-LS family, starting with the PS-LB/PS-LS pressure and water-level sensors.
 
 **Open the console: <https://claudobahn.github.io/dragino-sensor-web-console/>** (Chrome or Edge on a desktop
-computer; nothing to install).
+computer, or Chrome on Android; nothing to install).
 
 It has three tabs:
 
@@ -38,7 +38,9 @@ models can be added as new profiles.
 
 ## Hardware status
 
-Tested on a PS-LS-I4 with firmware `EU868 v1.2`. Details are in [docs/ble-protocol.md](docs/ble-protocol.md).
+Tested on a PS-LS-I4 with firmware `EU868 v1.2`, from desktop Chrome and from Chrome on Android (connection,
+login and automatic re-login, reading and writing settings, and the live reading). Details are in
+[docs/ble-protocol.md](docs/ble-protocol.md).
 That firmware has no `AT+CALIBRATION` or `AT+2PCALIDC`. The settings tab detects this from `AT?` (or from an
 `AT_ERROR` reply, if `AT?` can't be read), and the calibration wizard then gives a formula for your payload decoder
 instead. **Read now** uses
@@ -60,7 +62,8 @@ This tool does not upgrade firmware. -LB/-LS sensors can't be upgraded over Blue
 
 ## Requirements
 
-- Chrome or Edge on a desktop computer (Windows, macOS, Linux or ChromeOS). Firefox and Safari have no Web Bluetooth.
+- Chrome or Edge on a desktop computer (Windows, macOS, Linux or ChromeOS), or Chrome on Android.
+- Firefox, Safari and every browser on iPhone or iPad have no Web Bluetooth.
 - The page must be served from `https://` or `http://localhost`.
 - On Linux, Web Bluetooth may need `chrome://flags/#enable-experimental-web-platform-features` (not verified for
   this project).

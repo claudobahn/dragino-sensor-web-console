@@ -110,7 +110,7 @@ async function checkSupport(): Promise<void> {
   const problems: string[] = [];
   if (!window.isSecureContext) problems.push('This page must be served over HTTPS (or http://localhost).');
   if (!isWebBluetoothAvailable()) {
-    problems.push('Web Bluetooth is not available. Use desktop Chrome or Edge. Firefox and Safari do not support it.');
+    problems.push('Web Bluetooth is not available. Use Chrome or Edge on a desktop computer, or Chrome on Android. Firefox, Safari and iPhone/iPad browsers do not support it.');
   } else {
     try {
       if (!(await navigator.bluetooth.getAvailability())) problems.push('No Bluetooth adapter detected, or it is turned off.');
