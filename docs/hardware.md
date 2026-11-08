@@ -22,6 +22,13 @@ layout, and the manual only notes that the interrupt pin is now called GPIO_EXTI
 `VDC_IN` measures 0–30 V with 1 mV resolution and ±0.02 V accuracy, according to the manual. Its input resistance
 is not documented.
 
+## Battery voltage: PS-LB vs PS-LS
+
+- **PS-LB:** the main board runs directly from its battery pack (8500 mAh Li-SOCl2, ER26500 + SPC1520), so `Bat_V`
+  is the battery voltage.
+- **PS-LS:** the main board runs from the regulated output of the solar charger board, so `Bat_V` is that regulated
+  voltage, not the battery. Details below.
+
 ## Power on the PS-LS (solar model)
 
 The PS-LS has a 3000 mAh rechargeable Li-ion battery and a solar panel. A small charger board sits between them

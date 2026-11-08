@@ -49,7 +49,8 @@ Dragino's `PS-LB_v1.2.7_decoder.txt`, so existing dashboards keep working, and a
 | `DATALOG2` times | Server local time | UTC (same format) |
 | Port 3 "no data" record | One 1970 entry | Empty |
 
-On the PS-LS (solar model), `Bat_V` and `BAT` are the regulated supply, not the battery: they stay at about 3.42 V
+On the PS-LB, `Bat_V` and `BAT` are the battery voltage. On the PS-LS (solar model) they are the regulated output
+of the solar charger board, not the battery: they stay at about 3.42 V
 while the battery charges or discharges. With the battery wired to `VDC_IN`, `VDC_intput_V` reports the real
 battery voltage. See [docs/hardware.md](../docs/hardware.md).
 

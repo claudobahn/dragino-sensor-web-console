@@ -46,7 +46,8 @@ That firmware has no `AT+CALIBRATION` or `AT+2PCALIDC`. The settings tab detects
 instead. **Read now** uses
 `AT+GETSENSORVALUE=0`, which prints battery voltage, VDC input and probe current.
 
-On the PS-LS (solar model) the reported battery voltage is the regulated supply, not the battery. The terminal
+The reported battery voltage is the battery on the PS-LB, but on the PS-LS (solar model) it is the regulated output
+of the solar charger board. The terminal
 pinout, the probe wiring, the PS-LS power path and an optional upgrade that reports the real battery voltage are in
 [docs/hardware.md](docs/hardware.md).
 
