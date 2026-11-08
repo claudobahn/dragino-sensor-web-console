@@ -46,6 +46,10 @@ That firmware has no `AT+CALIBRATION` or `AT+2PCALIDC`. The settings tab detects
 instead. **Read now** uses
 `AT+GETSENSORVALUE=0`, which prints battery voltage, VDC input and probe current.
 
+On the PS-LS (solar model) the reported battery voltage is the regulated supply, not the battery. The terminal
+pinout, the probe wiring, the PS-LS power path and an optional upgrade that reports the real battery voltage are in
+[docs/hardware.md](docs/hardware.md).
+
 ## Backups and firmware upgrades
 
 **Back up settings…** on the settings tab saves `AT+CFG` as a text file. It doubles as a restore script: log in, then
